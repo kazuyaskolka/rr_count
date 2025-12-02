@@ -1,84 +1,5 @@
 // ===== app.js =====
 document.addEventListener('DOMContentLoaded', function(){
-// ===== GOOGLE DRIVE SYNC =====
-const CLIENT_ID = 'ВАШ_CLIENT_ID_ИЗ_JSON';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-let driveFileId = null; // сюда сохранится ID файла с JSON данных
-
-
-// Инициализация Google API
-function initGapi() {
-  gapi.load('client:auth2', async () => {
-    await gapi.client.init({
-      clientId: CLIENT_ID,
-      scope: SCOPES,
-    });
-  });
-}
-
-
-// Вход в Google
-async function gDriveSignIn() {
-  await gapi.auth2.getAuthInstance().signIn();
-}
-
-
-// Создать/получить файл с данными на Drive
-async function ensureDriveFile() {
-  const response = await gapi.client.drive.files.list({
-    q: "name='shop_data.json' and trashed=false",
-    fields: "files(id, name)"
-  });
-  if(response.result.files.length) {
-    driveFileId = response.result.files[0].id;
-  } else {
-    const file = new Blob([JSON.stringify({products:[], orders:[]})], {type:'application/json'});
-    const metadata = {name: 'shop_data.json', mimeType:'application/json'};
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
-    form.append('file', file);
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method:'POST',
-      headers: { Authorization: 'Bearer ' + gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token },
-      body: form
-    });
-    const data = await res.json();
-    driveFileId = data.id;
-  }
-}
-
-
-// Загрузить JSON с Drive
-async function loadFromDrive() {
-  if(!driveFileId) await ensureDriveFile();
-  const res = await gapi.client.request({
-    path: `/drive/v3/files/${driveFileId}?alt=media`
-  });
-  const data = JSON.parse(res.body || res.result);
-  products = data.products || [];
-  orders = data.orders || [];
-  renderProducts();
-  renderOrders();
-  renderCart();
-  renderStats();
-}
-
-
-// Сохранить JSON на Drive
-async function saveToDrive() {
-  if(!driveFileId) await ensureDriveFile();
-  const blob = new Blob([JSON.stringify({products, orders})], {type:'application/json'});
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify({})], {type:'application/json'}));
-  form.append('file', blob);
-  await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=multipart`, {
-    method:'PATCH',
-    headers: { Authorization: 'Bearer ' + gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token },
-    body: form
-  });
-}
-
-
   // ===== libs availability checks (XLSX/JSZip/Chart) are assumed loaded via HTML) =====
   
   
@@ -185,10 +106,8 @@ function tryAddToCart(prodId, qty, payment, name, price){
   
   // ===== storage helpers =====
   function saveProducts(){ localStorage.setItem('products', JSON.stringify(products)); }
-  saveToDrive(); // добавляем синхронизацию
 
   function saveOrders(){ localStorage.setItem('orders', JSON.stringify(orders)); renderOrders(); renderStats(); }
-  saveToDrive(); // добавляем синхронизацию
 
 
   
@@ -720,4 +639,5 @@ function finalizeOrder(){
   
   
   }); // DOMContentLoaded end
+
   
