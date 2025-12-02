@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Опционально: иконка для браузера -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <meta name="theme-color" content="#ffffff">  
   <meta charset="utf-8" />
   <title>Мини-магазин</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -183,12 +188,23 @@
   </div>
 
 
-    <!-- Google API для Drive -->
-  <script src="https://apis.google.com/js/api.js"></script>
+
+    <!-- Твой app.js -->
+    <script src="app.js"></script>
+
+    <script src="app.js"></script> <!-- твой основной скрипт -->
 
 
-  <!-- Твой app.js -->
-  <script src="app.js"></script>
+  <script>
+    // Проверка поддержки PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('Service Worker зарегистрирован', reg))
+        .catch(err => console.error('Ошибка регистрации Service Worker:', err));
+    } else {
+      console.warn('Service Worker не поддерживается этим браузером');
+    }
+  </script>
 
 </body>
 </html>
