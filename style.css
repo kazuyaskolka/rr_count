@@ -1,0 +1,84 @@
+/* общий стиль карточек */
+.product {
+  background-color: #3a3f44;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+
+/* картинка в карточке */
+.product img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+
+/* режим плитки */
+#products.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+
+#products.tiles .product {
+  flex: 0 0 calc(50% - 6px); /* две плитки в ряд */
+  display: flex;
+  flex-direction: column;     /* картинка сверху, инфа снизу */
+  align-items: flex-start;
+  background-color: #3a3f44;
+  padding: 10px;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+#products.tiles .product img {
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+
+
+/* адаптив */
+@media(max-width: 600px) {
+  #products.tiles .product {
+    flex: 0 0 100%;
+  }
+}
+
+
+/* кнопки и контролы */
+.product .meta {
+  flex: 1;
+}
+.product .name {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.product .price {
+  color: #9ea3a6;
+  margin-bottom: 4px;
+}
+
+
+/* Фиксированные высоты для графиков (не позволит им расти слишком сильно) */
+#chartCategorySum,
+#chartCategoryCount {
+  width: 100% !important;
+  max-height: 240px;     /* не больше этого */
+  height: 180px;         /* желаемая высота */
+  box-sizing: border-box;
+}
+
+
+/* Немного отступа вокруг canvas и чтобы фон выглядел аккуратно */
+#chartCategorySum + canvas,
+#chartCategoryCount + canvas {
+  margin-top: 8px;
+}
+

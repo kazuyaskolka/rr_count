@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Мини-магазин</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- стили (тёмная, минималистично) -->
+  <style>
+    :root{
+      --bg:#2f3438; --panel:#32373b; --card:#3a3f44; --muted:#9ea3a6; --accent:#4b9ef7;
+      --accent-2:#3b7ed0; --text:#e1e1e1;
+    }
+    html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:var(--bg);color:var(--text);}
+    .app{max-width:1200px;margin:16px auto;padding:16px;box-sizing:border-box;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    h1{margin:0;font-size:20px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .button:active{transform:translateY(1px)}
+    .small-btn{padding:6px 8px;border-radius:8px;border:none;margin-left:6px;cursor:pointer;background:#444;color:var(--text)}
+    .panel{background:var(--panel);padding:12px;border-radius:10px;margin-bottom:12px}
+    .layout{display:flex;gap:12px}
+    main{flex:1}
+    #products{display:flex;flex-direction:column;gap:10px}
+    .product{background:var(--card);padding:10px;border-radius:8px;display:flex;gap:12px;align-items:center}
+    .product .meta{flex:1}
+    .product img{width:96px;height:96px;object-fit:cover;border-radius:6px}
+    .product .name{font-weight:600;margin-bottom:6px}
+    .product .price{color:var(--muted)}
+    /* tile view */
+    /* плитки: карточка в колонку, два в ряд */
+    .tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px; /* расстояние между плитками */
+    }
+
+
+    .tiles .product {
+      flex: 0 0 calc(50% - 6px); /* две плитки в ряд, минус половина gap для ровности */
+      flex-direction: column;     /* картинка сверху, инфа снизу */
+      align-items: flex-start;    /* контент прижат к левому краю */
+    }
+
+    /* responsive */
+    @media(max-width:900px){ .tiles .product{width:calc(50% - 8px)} }
+    @media (max-width: 600px) {
+  .tiles .product {
+    flex: 0 0 100%;
+  }
+}
+
+
+    /* cart fixed bottom-right but inside page */
+    .cart-fixed{position:fixed;right:18px;bottom:18px;width:300px;max-width:40%;z-index:50}
+    .cart-panel{background:var(--panel);padding:12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+    .cart-items{max-height:260px;overflow:auto;margin-bottom:8px}
+    .cart-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .qty-controls button{padding:8px 10px;margin-left:6px;border-radius:8px;border:none;background:#4b4f56;color:var(--text);cursor:pointer}
+    select,input[type=number]{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#2b2f32;color:var(--text)}
+    input[type=file]{color:var(--muted)}
+    .muted{color:var(--muted);font-size:13px}
+    .bottom-actions{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:8px}
+    canvas{background:white;border-radius:8px}
+  </style>
+
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Мини-магазин</h1>
+      <div class="controls">
+        <label class="muted">Вид:</label>
+        <button id="viewList" class="small-btn">Список</button>
+        <button id="viewTiles" class="small-btn">Плитки</button>
+
+
+        <button id="openProfileBtn" class="button">Профиль</button>
+        <button id="openStatsBtn" class="button">Статистика</button>
+      </div>
+    </header>
+
+
+    <div class="layout">
+      <main>
+        <div class="panel">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div>
+              <label class="muted">Импорт товаров (Excel)</label><br>
+              <input type="file" id="excelInput" accept=".xlsx,.xls" />
+            </div>
+            <div>
+              <label class="muted">Импорт картинок (ZIP)</label><br>
+              <input type="file" id="zipInput" accept=".zip" />
+            </div>
+            <div style="margin-left:auto">
+              <button id="downloadProductsBtn" class="button">Скачать товары</button>
+              <button id="downloadOrdersBtn" class="button">Скачать отчёт</button>
+            </div>
+          </div>
+        </div>
+
+
+        <div style="margin-bottom:8px;">
+          <label class="muted">Фильтр по категории:</label>
+          <select id="categoryFilter"><option value="">Все</option></select>
+        </div>
+
+
+        <div id="products" class=""></div>
+
+
+        <h2 style="margin-top:14px">Заказы</h2>
+        <div id="orders" class="panel"></div>
+      </main>
+
+
+      <!-- справа: профиль/статистика скрытые секции (отдельная панель) -->
+      <aside style="width:340px;max-width:40%">
+        <div id="profileSection" class="panel" style="display:none">
+          <h3 style="margin-top:0">Профиль — импорт/экспорт</h3>
+          <div style="margin-bottom:8px;">
+            <label class="muted">Импорт (Excel) — профиль</label><br>
+            <input type="file" id="excelInputProfile" accept=".xlsx,.xls" />
+          </div>
+          <div style="margin-bottom:8px;">
+            <label class="muted">Импорт картинок (ZIP) — профиль</label><br>
+            <input type="file" id="zipInputProfile" accept=".zip" />
+          </div>
+          <div style="margin-top:8px;">
+            <button id="cleanStorageBtn" class="button">Очистить localStorage</button>
+          </div>
+        </div>
+
+
+        <div id="statsSection" class="panel" style="display:none">
+          <h3 style="margin-top:0">Статистика</h3>
+          <canvas id="chartCategorySum" height="140"></canvas>
+          <canvas id="chartCategoryCount" height="140" style="margin-top:8px"></canvas>
+        </div>
+      </aside>
+    </div>
+
+
+    <!-- корзина фикс -->
+    <div class="cart-fixed">
+      <div class="cart-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong>Текущий чек</strong>
+          <span class="muted" id="cartSummaryMini">0 / 0</span>
+        </div>
+
+
+        <div id="cartItems" class="cart-items"></div>
+
+
+        <div style="margin-top:8px">
+          <label class="muted">Оплата по умолчанию:</label>
+          <select id="cartPayment">
+            <option value="нал">Нал</option>
+            <option value="безнал">Безнал</option>
+          </select>
+        </div>
+
+
+        <div style="margin-top:8px">
+          <label class="muted">Комментарий:</label><br>
+          <textarea id="orderComment" rows="2" style="width:100%;box-sizing:border-box;background:#222;color:var(--text);border-radius:6px;padding:6px;border:1px solid rgba(255,255,255,0.03)"></textarea>
+        </div>
+
+
+        <div class="bottom-actions">
+          <button id="finalizeOrderBtn" class="button">Записать заказ</button>
+          <button id="clearCartBtn" class="small-btn">Очистить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- Google API для Drive -->
+  <script src="https://apis.google.com/js/api.js"></script>
+
+
+  <!-- Твой app.js -->
+  <script src="app.js"></script>
+
+</body>
+</html>
