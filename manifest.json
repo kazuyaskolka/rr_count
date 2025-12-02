@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "kazuyaskolka.github",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "kazuyaskolka.github",
+  "start_url": "/",
+  "theme_color": "#3b3b3b"
+}
