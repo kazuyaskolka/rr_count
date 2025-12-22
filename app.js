@@ -227,26 +227,6 @@ function tryAddToCart(prodId, qty, payment, name, price){
 
   meta.appendChild(controls);
 
-  // режим отображения
-  if(viewMode === 'tiles'){
-    card.style.display = 'flex';
-    card.style.flexDirection = 'column';
-    card.style.alignItems = 'flex-start';
-    card.appendChild(img);
-    card.appendChild(meta);
-  } else {
-    card.style.display = 'flex';
-    card.style.flexDirection = 'row';
-    card.style.alignItems = 'center';
-    img.style.width = '100px';
-    img.style.height = '100px';
-    img.style.marginRight = '10px';
-    card.appendChild(img);
-    card.appendChild(meta);
-  }
-
-  productsDiv.appendChild(card);
-);
 
 
 
@@ -259,31 +239,7 @@ function tryAddToCart(prodId, qty, payment, name, price){
     meta.appendChild(name); meta.appendChild(price); meta.appendChild(cat); meta.appendChild(stockEl); meta.appendChild(controls);
 
 
-    // === режимы отображения ===
-    if(viewMode === 'tiles'){
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.alignItems = 'flex-start';
-      card.appendChild(img);
-      card.appendChild(meta);
-    } else {
-      card.style.display = 'flex';
-      card.style.flexDirection = 'row';
-      card.style.alignItems = 'center';
-      img.style.width = '100px';
-      img.style.height = '100px';
-      img.style.marginRight = '10px';
-      card.appendChild(img);
-      card.appendChild(meta);
-    }
-
-
-    productsDiv.appendChild(card);
-  );
-}
-
-  
-  
+   
   
   
   // ===== render orders (safe) =====
@@ -693,5 +649,6 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
 
 
