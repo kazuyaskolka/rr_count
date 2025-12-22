@@ -223,7 +223,7 @@ if (p.imageUrl && p.imageUrl.trim() !== '') {
       img.style.marginRight = '10px';
       card.appendChild(img);
       card.appendChild(meta);
-    productsDiv.appendChild(card);
+      productsDiv.appendChild(card);
   });
 }
 
@@ -577,6 +577,7 @@ function compressImage(base64, maxWidth=300, maxHeight=300){
   }); // DOMContentLoaded end
 
   
+
 
 
 
