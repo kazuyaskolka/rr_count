@@ -126,6 +126,34 @@ function tryAddToCart(prodId, qty, payment, name, price){
     filterSelect.value = current;
   }
   
+  // ===== DOMContentLoaded =====
+document.addEventListener('DOMContentLoaded', function(){
+
+
+  // ===== state =====
+  var products = JSON.parse(localStorage.getItem('products') || '[]');
+  var orders = JSON.parse(localStorage.getItem('orders') || '[]');
+  var cart = [];
+  var quantities = {};
+  var payments = {};
+  var categoryFilter = '';
+  var viewMode = 'list';
+
+
+  // ===== helper: convert Google Drive link to direct image URL =====
+  function convertDriveLinkToDirect(url){
+    if(!url) return '';
+    var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(match && match[1]){
+      return 'https://drive.google.com/uc?export=view&id=' + match[1];
+    }
+    return url; // если не распознали, оставляем как есть
+  }
+
+
+  // ===== далее идут все остальные функции =====
+  // handleExcelFile, renderProducts, finalizeOrder и т.д.
+
   
   // ===== render products =====
   function renderProducts(){
@@ -418,64 +446,66 @@ function getDriveDirectLink(url){
   
   // ===== file handlers =====
   function handleExcelFile(file){
-    if(!file) return alert('Файл не выбран');
-    var reader = new FileReader();
-    reader.onload = function(evt){
-      try {
-        var data = new Uint8Array(evt.target.result);
-        var wb = XLSX.read(data, { type:'array' });
-        var sheet = wb.Sheets[wb.SheetNames[0]];
-        var rows = XLSX.utils.sheet_to_json(sheet);
-        var added = 0;
-        var updated = 0;
-  
-  
-        rows.forEach(function(r,i){
-          if(!r.name || (r.price===undefined)) return;
-  
-  
-          // проверка по имени (можно заменить на r.id, если есть)
-          var existing = products.find(p => p.name === r.name);
-  
-  
-          if(existing){
-  // обновляем существующий товар
-  existing.price = Number(r.price || 0);
-  existing.stock = Number(r.stock || 0);
-  existing.categories = r.categories || '';
-  existing.imageFile = r.image_file || '';
-  existing.imageData = r.image_file ? getDriveDirectLink(r.image_file) : existing.imageData;
-  existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
-  updated++;
-} else {
-  // добавляем новый товар
-  var id = Date.now() + i + Math.floor(Math.random()*1000);
-  products.push({
-    id: id,
-    name: r.name,
-    price: Number(r.price||0),
-    stock: Number(r.stock||0),
-    categories: r.categories || '',
-    imageFile: r.image_file || '',
-    imageData: r.image_file ? getDriveDirectLink(r.image_file) : '',
-    active: (r.active === 1 || r.active === true || String(r.active) === '1')
-  });
-  added++;
+  if(!file) return alert('Файл не выбран');
+  var reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      var data = new Uint8Array(evt.target.result);
+      var wb = XLSX.read(data, { type:'array' });
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet);
+      var added = 0;
+      var updated = 0;
+
+
+      rows.forEach(function(r,i){
+        if(!r.name || (r.price===undefined)) return;
+
+
+        // конвертация ссылки Google Drive в прямую
+        var imgLink = convertDriveLinkToDirect(r.image_file || '');
+
+
+        var existing = products.find(p => p.name === r.name);
+
+
+        if(existing){
+          existing.price = Number(r.price || 0);
+          existing.stock = Number(r.stock || 0);
+          existing.categories = r.categories || '';
+          existing.imageFile = r.image_file || '';
+          existing.imageData = imgLink; // сразу для отображения
+          existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
+          updated++;
+        } else {
+          var id = Date.now() + i + Math.floor(Math.random()*1000);
+          products.push({
+            id: id,
+            name: r.name,
+            price: Number(r.price||0),
+            stock: Number(r.stock||0),
+            categories: r.categories || '',
+            imageFile: r.image_file || '',
+            imageData: imgLink, // сразу для <img>
+            active: (r.active === 1 || r.active === true || String(r.active) === '1')
+          });
+          added++;
+        }
+      });
+
+
+      saveProducts();
+      updateCategoryFilter();
+      renderProducts();
+      alert('Импортировано строк: ' + added + ', обновлено: ' + updated);
+    } catch(e){
+      console.error(e);
+      alert('Ошибка чтения Excel: ' + e.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
-        });
-  
-  
-        saveProducts();
-        updateCategoryFilter();
-        renderProducts();
-        alert('Импортировано строк: ' + added + ', обновлено: ' + updated);
-      } catch(e){
-        console.error(e);
-        alert('Ошибка чтения Excel: ' + e.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
+
   
   
   
@@ -647,4 +677,5 @@ function getDriveDirectLink(url){
   }); // DOMContentLoaded end
 
   
+
 
