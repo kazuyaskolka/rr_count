@@ -652,4 +652,3 @@ function finalizeOrder(){
   
   
   }); // DOMContentLoaded end
-
