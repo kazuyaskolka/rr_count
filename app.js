@@ -409,7 +409,12 @@ function finalizeOrder(){
   alert('Заказ записан: ' + orderObj.id);
 }
 
-  
+function getDriveDirectLink(url){
+  // ожидаем ссылку вида https://drive.google.com/file/d/FILE_ID/view?usp=...
+  var match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if(match && match[1]) return 'https://drive.google.com/uc?export=view&id=' + match[1];
+  return url; // если не распознали — возвращаем как есть
+}
   
   // ===== file handlers =====
   function handleExcelFile(file){
@@ -434,28 +439,29 @@ function finalizeOrder(){
   
   
           if(existing){
-            // обновляем существующий товар
-            existing.price = Number(r.price || 0);
-            existing.stock = Number(r.stock || 0);
-            existing.categories = r.categories || '';
-            existing.imageFile = r.image_file || '';
-            existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
-            updated++;
-          } else {
-            // добавляем новый товар
-            var id = Date.now() + i + Math.floor(Math.random()*1000);
-            products.push({
-              id: id,
-              name: r.name,
-              price: Number(r.price||0),
-              stock: Number(r.stock||0),
-              categories: r.categories || '',
-              imageFile: r.image_file || '',
-              imageData: '',
-              active: (r.active === 1 || r.active === true || String(r.active) === '1')
-            });
-            added++;
-          }
+  // обновляем существующий товар
+  existing.price = Number(r.price || 0);
+  existing.stock = Number(r.stock || 0);
+  existing.categories = r.categories || '';
+  existing.imageFile = r.image_file || '';
+  existing.imageData = r.image_file ? getDriveDirectLink(r.image_file) : existing.imageData;
+  existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
+  updated++;
+} else {
+  // добавляем новый товар
+  var id = Date.now() + i + Math.floor(Math.random()*1000);
+  products.push({
+    id: id,
+    name: r.name,
+    price: Number(r.price||0),
+    stock: Number(r.stock||0),
+    categories: r.categories || '',
+    imageFile: r.image_file || '',
+    imageData: r.image_file ? getDriveDirectLink(r.image_file) : '',
+    active: (r.active === 1 || r.active === true || String(r.active) === '1')
+  });
+  added++;
+}
         });
   
   
@@ -641,3 +647,4 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
