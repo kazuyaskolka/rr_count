@@ -145,57 +145,109 @@ function tryAddToCart(prodId, qty, payment, name, price){
   }
 
 
-var img = document.createElement('img');
-img.alt = p.name || '';
+  filtered.forEach(function(p){
+  var card = document.createElement('div');
+  card.className = 'product';
 
-if (p.imageUrl && p.imageUrl.trim() !== '') {
-  img.src = normalizeDriveUrl(p.imageUrl);
-} else {
-  img.style.display = 'none';
-}
+  // изображение
+  var img = document.createElement('img');
+  img.alt = p.name || '';
+  if (p.imageUrl && p.imageUrl.trim() !== '') {
+    img.src = normalizeDriveUrl(p.imageUrl);
+  } else {
+    img.style.display = 'none';
+  }
 
+  // мета-информация
+  var meta = document.createElement('div');
+  meta.className = 'meta';
 
+  var nameEl = document.createElement('div'); 
+  nameEl.className = 'name'; 
+  nameEl.textContent = p.name || 'Без имени';
 
-    var meta = document.createElement('div');
-    meta.className = 'meta';
+  var priceEl = document.createElement('div'); 
+  priceEl.className = 'price'; 
+  priceEl.textContent = (p.price || 0) + ' ₽';
 
+  var catEl = document.createElement('div'); 
+  catEl.className = 'muted'; 
+  catEl.textContent = 'Категория: ' + (p.categories || '—');
 
-    var name = document.createElement('div'); name.className = 'name'; name.textContent = p.name || 'Без имени';
-    var price = document.createElement('div'); price.className = 'price'; price.textContent = (p.price || 0) + ' ₽';
-    var cat = document.createElement('div'); cat.className = 'muted'; cat.textContent = 'Категория: ' + (p.categories || '—');
+  // остаток
+  var avail = getAvailableStock(p.id);
+  var stockEl = document.createElement('div'); 
+  stockEl.className = 'muted'; 
+  stockEl.textContent = 'Остаток: ' + avail + (typeof p.stock === 'number' ? (' (в базе: ' + p.stock + ')') : '');
 
+  meta.appendChild(nameEl);
+  meta.appendChild(priceEl);
+  meta.appendChild(catEl);
+  meta.appendChild(stockEl);
 
-    // остаток (с учётом текущей корзины)
-    var avail = getAvailableStock(p.id);
-    var stockEl = document.createElement('div'); stockEl.className = 'muted'; stockEl.textContent = 'Остаток: ' + avail + (typeof p.stock === 'number' ? (' (в базе: ' + p.stock + ')') : '');
+  // controls: qty + payment + add to cart
+  var controls = document.createElement('div'); 
+  controls.style.marginTop = '8px';
 
+  var qtyInput = document.createElement('input'); 
+  qtyInput.type = 'number'; 
+  qtyInput.min = 1; 
+  qtyInput.value = quantities[p.id] || 1; 
+  qtyInput.style.width = '70px';
+  qtyInput.addEventListener('input', function(){ quantities[p.id] = Number(this.value) || 1; });
 
-    // qty и оплата
-    var controls = document.createElement('div'); controls.style.marginTop = '8px';
-    var qtyInput = document.createElement('input'); qtyInput.type='number'; qtyInput.min=1; qtyInput.value = quantities[p.id] || 1; qtyInput.style.width='70px';
-    qtyInput.addEventListener('input', function(){ quantities[p.id] = Number(this.value) || 1; });
+  var paySelect = document.createElement('select');
+  var o1 = document.createElement('option'); o1.value='нал'; o1.text='Нал';
+  var o2 = document.createElement('option'); o2.value='безнал'; o2.text='Безнал';
+  paySelect.appendChild(o1); paySelect.appendChild(o2);
+  paySelect.value = payments[p.id] || 'нал';
+  paySelect.addEventListener('change', function(){ payments[p.id] = this.value; });
 
+  var addBtn = document.createElement('button'); 
+  addBtn.className='button'; 
+  addBtn.textContent='Добавить в корзину';
+  addBtn.addEventListener('click', function(){
+    var qty = Number(quantities[p.id] || qtyInput.value || 1);
+    var payment = payments[p.id] || paySelect.value || 'нал';
+    var res = tryAddToCart(p.id, qty, payment, p.name, p.price);
+    if(!res.ok){
+      alert(res.message || 'Не удалось добавить');
+      return;
+    }
+    renderCart();
+    renderProducts(); // обновим остатки
+  });
 
-    var paySelect = document.createElement('select');
-    var o1 = document.createElement('option'); o1.value='нал'; o1.text='Нал';
-    var o2 = document.createElement('option'); o2.value='безнал'; o2.text='Безнал';
-    paySelect.appendChild(o1); paySelect.appendChild(o2);
-    paySelect.value = payments[p.id] || 'нал';
-    paySelect.addEventListener('change', function(){ payments[p.id] = this.value; });
+  controls.appendChild(document.createTextNode('Кол-во: ')); 
+  controls.appendChild(qtyInput);
+  controls.appendChild(document.createTextNode(' Оплата: ')); 
+  controls.appendChild(paySelect);
+  controls.appendChild(document.createElement('br'));
+  controls.appendChild(addBtn);
 
+  meta.appendChild(controls);
 
-    var addBtn = document.createElement('button'); addBtn.className='button'; addBtn.textContent='Добавить в корзину';
-    addBtn.addEventListener('click', function(){
-      var qty = Number(quantities[p.id] || qtyInput.value || 1);
-      var payment = payments[p.id] || paySelect.value || 'нал';
-      var res = tryAddToCart(p.id, qty, payment, p.name, p.price);
-      if(!res.ok){
-        alert(res.message || 'Не удалось добавить');
-        return;
-      }
-      renderCart();
-      renderProducts(); // обновим остатки на карточках
-    });
+  // режим отображения
+  if(viewMode === 'tiles'){
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'flex-start';
+    card.appendChild(img);
+    card.appendChild(meta);
+  } else {
+    card.style.display = 'flex';
+    card.style.flexDirection = 'row';
+    card.style.alignItems = 'center';
+    img.style.width = '100px';
+    img.style.height = '100px';
+    img.style.marginRight = '10px';
+    card.appendChild(img);
+    card.appendChild(meta);
+  }
+
+  productsDiv.appendChild(card);
+});
+
 
 
     controls.appendChild(document.createTextNode('Кол-во: ')); controls.appendChild(qtyInput);
@@ -223,7 +275,10 @@ if (p.imageUrl && p.imageUrl.trim() !== '') {
       img.style.marginRight = '10px';
       card.appendChild(img);
       card.appendChild(meta);
-      productsDiv.appendChild(card);
+    }
+
+
+    productsDiv.appendChild(card);
   });
 }
 
@@ -343,18 +398,7 @@ if (p.imageUrl && p.imageUrl.trim() !== '') {
   }
 
   
-  function normalizeDriveUrl(url) {
-  if (!url) return '';
-
-  // если это обычная drive-ссылка — переделываем
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) {
-    return 'https://drive.google.com/uc?id=' + match[1];
-  }
-
-  return url; // если уже норм или не drive
-}
-
+  
   
   // ===== finalize order =====
   // ----------------- finalizeOrder (замена) -----------------
@@ -419,23 +463,89 @@ function finalizeOrder(){
 
   
   
-function compressImage(base64, maxWidth=300, maxHeight=300){
-  return new Promise(resolve=>{
-    const img = new Image();
-    img.onload = function(){
-      let w = img.width, h = img.height;
-      const ratio = Math.min(maxWidth/w, maxHeight/h, 1);
-      w *= ratio; h *= ratio;
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/png', 0.8));
-    }
-    img.src = base64;
-  });
-}
-
+  // ===== file handlers =====
+  function handleExcelFile(file){
+    if(!file) return alert('Файл не выбран');
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try {
+        var data = new Uint8Array(evt.target.result);
+        var wb = XLSX.read(data, { type:'array' });
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet);
+        var added = 0;
+        var updated = 0;
+  
+  
+        rows.forEach(function(r,i){
+          if(!r.name || (r.price===undefined)) return;
+  
+  
+          // проверка по имени (можно заменить на r.id, если есть)
+          var existing = products.find(p => p.name === r.name);
+  
+  
+          if(existing){
+            // обновляем существующий товар
+            existing.price = Number(r.price || 0);
+            existing.stock = Number(r.stock || 0);
+            existing.categories = r.categories || '';
+            existing.imageFile = r.image_file || '';
+            existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
+            updated++;
+          } else {
+            // добавляем новый товар
+            var id = Date.now() + i + Math.floor(Math.random()*1000);
+            products.push({
+              id: id,
+              name: r.name,
+              price: Number(r.price||0),
+              stock: Number(r.stock||0),
+              categories: r.categories || '',
+              imageFile: r.image_file || '',
+              imageData: '',
+              active: (r.active === 1 || r.active === true || String(r.active) === '1')
+            });
+            added++;
+          }
+        });
+  
+  
+        saveProducts();
+        updateCategoryFilter();
+        renderProducts();
+        alert('Импортировано строк: ' + added + ', обновлено: ' + updated);
+      } catch(e){
+        console.error(e);
+        alert('Ошибка чтения Excel: ' + e.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  
+  
+  
+  function handleZipFile(file){
+    if(!file) return alert('ZIP не выбран');
+    JSZip.loadAsync(file).then(function(zip){
+      var names = Object.keys(zip.files);
+      var processed = 0;
+      names.forEach(function(fname){
+        if(zip.files[fname].dir){ processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки обработаны'); } return; }
+        zip.files[fname].async('base64').then(function(data){
+          var base = 'data:image/png;base64,' + data;
+          // find product by imageFile
+          products.forEach(function(p){ if(p.imageFile === fname){ p.imageData = base; } });
+          processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки импортированы'); }
+        }).catch(function(err){
+          console.warn('zip entry err',err);
+          processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки импортированы (с ошибками)'); }
+        });
+      });
+    }).catch(function(err){ console.error(err); alert('Ошибка чтения ZIP: '+err.message); });
+  }
+  
+  
   // ===== export =====
   function downloadProductsExcel(){
     if(typeof XLSX === 'undefined') return alert('XLSX не найден');
@@ -534,6 +644,12 @@ function compressImage(base64, maxWidth=300, maxHeight=300){
   document.getElementById('viewTiles').addEventListener('click', function(){ viewMode='tiles'; renderProducts(); });
   
   
+  excelInput.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
+  zipInput.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
+  if(excelInputProfile) excelInputProfile.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
+  if(zipInputProfile) zipInputProfile.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
+  
+  
   document.getElementById('downloadProductsBtn').addEventListener('click', downloadProductsExcel);
   document.getElementById('downloadOrdersBtn').addEventListener('click', downloadOrdersExcel);
   
@@ -577,7 +693,3 @@ function compressImage(base64, maxWidth=300, maxHeight=300){
   }); // DOMContentLoaded end
 
   
-
-
-
-
