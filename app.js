@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function(){
   // ===== libs availability checks (XLSX/JSZip/Chart) are assumed loaded via HTML) =====
 
+
   // ===== Data load & normalization =====
   var products = JSON.parse(localStorage.getItem('products') || '[]');
   var orders = JSON.parse(localStorage.getItem('orders') || '[]');
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function(){
   var payments = {};   // temporary payment selection per product id
   var categoryFilter = '';
   var viewMode = 'list'; // 'list' or 'tiles'
+
 
   // helper: generate order id
   function generateOrderNumber(){
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var day = ('0'+d.getDate()).slice(-2);
     return 'CHK-'+y+m+day+'-'+Date.now().toString().slice(-5);
   }
+
 
   // ----------------- Управление остатками -----------------
   function getAvailableStock(prodId){
@@ -31,11 +34,13 @@ document.addEventListener('DOMContentLoaded', function(){
     return avail < 0 ? 0 : avail;
   }
 
+
   function tryAddToCart(prodId, qty, payment, name, price){
     qty = Number(qty || 0);
     if(qty <= 0) return { ok:false, message: 'Неверное количество' };
     var avail = getAvailableStock(prodId);
     if(qty > avail) return { ok:false, message: 'Доступно только ' + avail + ' шт.' };
+
 
     var existing = cart.find(function(c){ return c.productId === prodId && c.payment === payment; });
     if(existing){
@@ -51,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     return { ok:true };
   }
+
 
   // normalize products/orders to avoid crashes
   products = Array.isArray(products) ? products : [];
@@ -68,8 +74,10 @@ document.addEventListener('DOMContentLoaded', function(){
     };
   });
 
+
   // ===== state =====
   var cart = []; // {productId,name,price,qty,payment}
+
 
   // ===== DOM refs =====
   var productsDiv = document.getElementById('products');
@@ -86,9 +94,11 @@ document.addEventListener('DOMContentLoaded', function(){
   var orderCommentInput = document.getElementById('orderComment');
   var cartSummaryMini = document.getElementById('cartSummaryMini');
 
+
   // ===== storage helpers =====
   function saveProducts(){ localStorage.setItem('products', JSON.stringify(products)); }
   function saveOrders(){ localStorage.setItem('orders', JSON.stringify(orders)); renderOrders(); renderStats(); }
+
 
   // ===== update category filter =====
   function updateCategoryFilter(){
@@ -104,31 +114,39 @@ document.addEventListener('DOMContentLoaded', function(){
     filterSelect.value = current;
   }
 
+
   // ===== render products =====
   function renderProducts(){
     productsDiv.innerHTML = '';
 
+
     if(viewMode === 'tiles') productsDiv.classList.add('tiles'); 
     else productsDiv.classList.remove('tiles');
 
+
     var filtered = products.filter(function(p){ return p && p.active !== false && (categoryFilter === '' || (p.categories || '') === categoryFilter); });
+
 
     if(filtered.length === 0){
       productsDiv.innerHTML = '<div class="panel">Нет товаров</div>';
       return;
     }
 
+
     filtered.forEach(function(p){
       var card = document.createElement('div');
       card.className = 'product';
+
 
       var img = document.createElement('img');
       img.alt = p.name || '';
       if (p.imageUrl && p.imageUrl.trim() !== '') img.src = normalizeDriveUrl(p.imageUrl);
       else img.style.display = 'none';
 
+
       var meta = document.createElement('div');
       meta.className = 'meta';
+
 
       var nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = p.name || 'Без имени';
       var priceEl = document.createElement('div'); priceEl.className = 'price'; priceEl.textContent = (p.price || 0) + ' ₽';
@@ -136,15 +154,18 @@ document.addEventListener('DOMContentLoaded', function(){
       var avail = getAvailableStock(p.id);
       var stockEl = document.createElement('div'); stockEl.className = 'muted'; stockEl.textContent = 'Остаток: ' + avail + (typeof p.stock === 'number' ? (' (в базе: ' + p.stock + ')') : '');
 
+
       meta.appendChild(nameEl);
       meta.appendChild(priceEl);
       meta.appendChild(catEl);
       meta.appendChild(stockEl);
 
+
       // controls
       var controls = document.createElement('div'); controls.style.marginTop = '8px';
       var qtyInput = document.createElement('input'); qtyInput.type='number'; qtyInput.min=1; qtyInput.value = quantities[p.id] || 1; qtyInput.style.width='70px';
       qtyInput.addEventListener('input', function(){ quantities[p.id] = Number(this.value) || 1; });
+
 
       var paySelect = document.createElement('select');
       var o1 = document.createElement('option'); o1.value='нал'; o1.text='Нал';
@@ -152,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function(){
       paySelect.appendChild(o1); paySelect.appendChild(o2);
       paySelect.value = payments[p.id] || 'нал';
       paySelect.addEventListener('change', function(){ payments[p.id] = this.value; });
+
 
       var addBtn = document.createElement('button'); addBtn.className='button'; addBtn.textContent='Добавить в корзину';
       addBtn.addEventListener('click', function(){
@@ -163,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function(){
         renderProducts();
       });
 
+
       controls.appendChild(document.createTextNode('Кол-во: ')); 
       controls.appendChild(qtyInput);
       controls.appendChild(document.createTextNode(' Оплата: ')); 
@@ -170,7 +193,9 @@ document.addEventListener('DOMContentLoaded', function(){
       controls.appendChild(document.createElement('br'));
       controls.appendChild(addBtn);
 
+
       meta.appendChild(controls);
+
 
       // === режимы отображения ===
       if(viewMode === 'tiles'){
@@ -190,9 +215,11 @@ document.addEventListener('DOMContentLoaded', function(){
         card.appendChild(meta);
       }
 
+
       productsDiv.appendChild(card);
     });
   } // <-- renderProducts закрыта
+
 
   // ===== renderOrders =====
   function renderOrders(){
@@ -225,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
+
   // ===== renderCart =====
   function renderCart(){
     cartItemsDiv.innerHTML = '';
@@ -235,14 +263,17 @@ document.addEventListener('DOMContentLoaded', function(){
       var left = document.createElement('div'); left.textContent = c.name + ' (' + (c.price||0) + '₽)';
       var right = document.createElement('div'); right.style.display='flex'; right.style.alignItems='center';
 
+
       var qtySpan = document.createElement('span'); qtySpan.textContent = ' x' + c.qty; qtySpan.style.marginRight='8px';
       var controls = document.createElement('div'); controls.className='qty-controls';
+
 
       var minus = document.createElement('button'); minus.textContent='−';
       minus.addEventListener('click', function(){
         if(c.qty > 1){ c.qty--; renderCart(); renderProducts(); } 
         else if(confirm('Удалить позицию из корзины?')){ cart.splice(idx,1); renderCart(); renderProducts(); }
       });
+
 
       var plus = document.createElement('button'); plus.textContent='+'; 
       plus.addEventListener('click', function(){ 
@@ -251,8 +282,10 @@ document.addEventListener('DOMContentLoaded', function(){
         c.qty++; renderCart(); renderProducts();
       });
 
+
       var del = document.createElement('button'); del.textContent='✕'; del.style.marginLeft='8px';
       del.addEventListener('click', function(){ if(confirm('Удалить позицию из корзины?')){ cart.splice(idx,1); renderCart(); renderProducts(); } });
+
 
       controls.appendChild(minus); controls.appendChild(plus); controls.appendChild(del);
       right.appendChild(qtySpan); right.appendChild(controls);
@@ -266,9 +299,11 @@ document.addEventListener('DOMContentLoaded', function(){
     cartSummaryMini.textContent = cart.length + ' / ' + qtySum;
   }
 
+
   // ===== finalizeOrder =====
   function finalizeOrder(){
     if(cart.length === 0){ alert('Корзина пуста'); return; }
+
 
     for(var i=0;i<cart.length;i++){
       var c = cart[i];
@@ -280,6 +315,7 @@ document.addEventListener('DOMContentLoaded', function(){
         return;
       }
     }
+
 
     var positions = cart.map(function(c){ return { productId: c.productId, name: c.name, qty: c.qty, price: c.price, payment: c.payment }; });
     var paymentOverall = (cartPaymentSelect && cartPaymentSelect.value) ? cartPaymentSelect.value : (positions[0] && positions[0].payment) || 'нал';
@@ -293,33 +329,41 @@ document.addEventListener('DOMContentLoaded', function(){
       comment: orderCommentInput ? (orderCommentInput.value || '') : ''
     };
 
+
     orderObj.positions.forEach(function(pos){
       var prod = products.find(function(pp){ return pp.id === pos.productId; });
       if(prod && typeof prod.stock === 'number'){ prod.stock = Math.max(0, Number(prod.stock) - Number(pos.qty || 0)); }
     });
 
+
     orders.push(orderObj);
     saveOrders();
     saveProducts();
+
 
     cart.length = 0; quantities = {}; payments = {};
     if(orderCommentInput) orderCommentInput.value = '';
     renderCart(); renderProducts();
 
+
     alert('Заказ записан: ' + orderObj.id);
   }
+
 
   // ===== init event bindings =====
   filterSelect.addEventListener('change', function(){ categoryFilter = this.value; renderProducts(); });
   document.getElementById('viewList').addEventListener('click', function(){ viewMode='list'; renderProducts(); });
   document.getElementById('viewTiles').addEventListener('click', function(){ viewMode='tiles'; renderProducts(); });
 
+
   excelInput.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
   zipInput.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
   if(excelInputProfile) excelInputProfile.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
   if(zipInputProfile) zipInputProfile.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
 
+
   document.getElementById('downloadProductsBtn').addEventListener('click', downloadProductsExcel);
   document.getElementById('downloadOrdersBtn').addEventListener('click', downloadOrdersExcel);
+
 
   document.getElementById('openProfileBtn').addEventListener('click
