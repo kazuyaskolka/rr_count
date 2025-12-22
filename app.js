@@ -145,15 +145,15 @@ function tryAddToCart(prodId, qty, payment, name, price){
   }
 
 
-  filtered.forEach(function(p){
-    var card = document.createElement('div');
-    card.className = 'product';
+var img = document.createElement('img');
+img.alt = p.name || '';
 
+if (p.imageUrl && p.imageUrl.trim() !== '') {
+  img.src = normalizeDriveUrl(p.imageUrl);
+} else {
+  img.style.display = 'none';
+}
 
-    var img = document.createElement('img');
-    img.alt = p.name || '';
-    img.src = p.imageData || '';
-    if(!p.imageData) img.style.display = 'none';
 
 
     var meta = document.createElement('div');
@@ -346,7 +346,18 @@ function tryAddToCart(prodId, qty, payment, name, price){
   }
 
   
-  
+  function normalizeDriveUrl(url) {
+  if (!url) return '';
+
+  // если это обычная drive-ссылка — переделываем
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return 'https://drive.google.com/uc?id=' + match[1];
+  }
+
+  return url; // если уже норм или не drive
+}
+
   
   // ===== finalize order =====
   // ----------------- finalizeOrder (замена) -----------------
@@ -411,7 +422,6 @@ function finalizeOrder(){
 
   
   
-  // ===== file handlers =====
 function compressImage(base64, maxWidth=300, maxHeight=300){
   return new Promise(resolve=>{
     const img = new Image();
@@ -429,91 +439,6 @@ function compressImage(base64, maxWidth=300, maxHeight=300){
   });
 }
 
-
-function handleZipFile(file){
-  if(!file) return alert('ZIP не выбран');
-  JSZip.loadAsync(file).then(function(zip){
-    var names = Object.keys(zip.files);
-    var processed = 0;
-
-    names.forEach(function(fname){
-      if(zip.files[fname].dir){
-        processed++;
-        if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки обработаны'); }
-        return;
-      }
-
-      zip.files[fname].async('base64').then(function(data){
-        const base = 'data:image/png;base64,' + data;
-
-        // здесь заменяем обычное присваивание на сжатие
-        compressImage(base, 300, 300).then(function(compressedBase){
-          products.forEach(function(p){
-            if(p.imageFile === fname){
-              p.imageData = compressedBase; // сюда записываем уже уменьшённое изображение
-            }
-          });
-
-          processed++;
-          if(processed===names.length){
-            saveProducts();
-            renderProducts();
-            alert('Картинки импортированы');
-          }
-        });
-      }).catch(function(err){
-        console.warn('zip entry err',err);
-        processed++;
-        if(processed===names.length){
-          saveProducts();
-          renderProducts();
-          alert('Картинки импортированы (с ошибками)');
-        }
-      });
-    });
-  }).catch(function(err){ 
-    console.error(err); 
-    alert('Ошибка чтения ZIP: '+err.message); 
-  });
-}
-
-  
-  
-        saveProducts();
-        updateCategoryFilter();
-        renderProducts();
-        alert('Импортировано строк: ' + added + ', обновлено: ' + updated);
-      } catch(e){
-        console.error(e);
-        alert('Ошибка чтения Excel: ' + e.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-  
-  
-  
-  function handleZipFile(file){
-    if(!file) return alert('ZIP не выбран');
-    JSZip.loadAsync(file).then(function(zip){
-      var names = Object.keys(zip.files);
-      var processed = 0;
-      names.forEach(function(fname){
-        if(zip.files[fname].dir){ processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки обработаны'); } return; }
-        zip.files[fname].async('base64').then(function(data){
-          var base = 'data:image/png;base64,' + data;
-          // find product by imageFile
-          products.forEach(function(p){ if(p.imageFile === fname){ p.imageData = base; } });
-          processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки импортированы'); }
-        }).catch(function(err){
-          console.warn('zip entry err',err);
-          processed++; if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки импортированы (с ошибками)'); }
-        });
-      });
-    }).catch(function(err){ console.error(err); alert('Ошибка чтения ZIP: '+err.message); });
-  }
-  
-  
   // ===== export =====
   function downloadProductsExcel(){
     if(typeof XLSX === 'undefined') return alert('XLSX не найден');
@@ -612,12 +537,6 @@ function handleZipFile(file){
   document.getElementById('viewTiles').addEventListener('click', function(){ viewMode='tiles'; renderProducts(); });
   
   
-  excelInput.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
-  zipInput.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
-  if(excelInputProfile) excelInputProfile.addEventListener('change', function(e){ handleExcelFile(e.target.files[0]); });
-  if(zipInputProfile) zipInputProfile.addEventListener('change', function(e){ handleZipFile(e.target.files[0]); });
-  
-  
   document.getElementById('downloadProductsBtn').addEventListener('click', downloadProductsExcel);
   document.getElementById('downloadOrdersBtn').addEventListener('click', downloadOrdersExcel);
   
@@ -661,4 +580,5 @@ function handleZipFile(file){
   }); // DOMContentLoaded end
 
   
+
 
