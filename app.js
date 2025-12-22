@@ -243,10 +243,10 @@ function tryAddToCart(prodId, qty, payment, name, price){
     img.style.marginRight = '10px';
     card.appendChild(img);
     card.appendChild(meta);
-  
+  }
 
   productsDiv.appendChild(card);
-});
+);
 
 
 
@@ -275,11 +275,11 @@ function tryAddToCart(prodId, qty, payment, name, price){
       img.style.marginRight = '10px';
       card.appendChild(img);
       card.appendChild(meta);
-    
+    }
 
 
     productsDiv.appendChild(card);
-  });
+  );
 }
 
   
@@ -693,4 +693,5 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
 
