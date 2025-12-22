@@ -412,51 +412,71 @@ function finalizeOrder(){
   
   
   // ===== file handlers =====
-  function handleExcelFile(file){
-    if(!file) return alert('Файл не выбран');
-    var reader = new FileReader();
-    reader.onload = function(evt){
-      try {
-        var data = new Uint8Array(evt.target.result);
-        var wb = XLSX.read(data, { type:'array' });
-        var sheet = wb.Sheets[wb.SheetNames[0]];
-        var rows = XLSX.utils.sheet_to_json(sheet);
-        var added = 0;
-        var updated = 0;
-  
-  
-        rows.forEach(function(r,i){
-          if(!r.name || (r.price===undefined)) return;
-  
-  
-          // проверка по имени (можно заменить на r.id, если есть)
-          var existing = products.find(p => p.name === r.name);
-  
-  
-          if(existing){
-            // обновляем существующий товар
-            existing.price = Number(r.price || 0);
-            existing.stock = Number(r.stock || 0);
-            existing.categories = r.categories || '';
-            existing.imageFile = r.image_file || '';
-            existing.active = (r.active === 1 || r.active === true || String(r.active) === '1');
-            updated++;
-          } else {
-            // добавляем новый товар
-            var id = Date.now() + i + Math.floor(Math.random()*1000);
-            products.push({
-              id: id,
-              name: r.name,
-              price: Number(r.price||0),
-              stock: Number(r.stock||0),
-              categories: r.categories || '',
-              imageFile: r.image_file || '',
-              imageData: '',
-              active: (r.active === 1 || r.active === true || String(r.active) === '1')
-            });
-            added++;
+function compressImage(base64, maxWidth=300, maxHeight=300){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = function(){
+      let w = img.width, h = img.height;
+      const ratio = Math.min(maxWidth/w, maxHeight/h, 1);
+      w *= ratio; h *= ratio;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/png', 0.8));
+    }
+    img.src = base64;
+  });
+}
+
+
+function handleZipFile(file){
+  if(!file) return alert('ZIP не выбран');
+  JSZip.loadAsync(file).then(function(zip){
+    var names = Object.keys(zip.files);
+    var processed = 0;
+
+    names.forEach(function(fname){
+      if(zip.files[fname].dir){
+        processed++;
+        if(processed===names.length){ saveProducts(); renderProducts(); alert('Картинки обработаны'); }
+        return;
+      }
+
+      zip.files[fname].async('base64').then(function(data){
+        const base = 'data:image/png;base64,' + data;
+
+        // здесь заменяем обычное присваивание на сжатие
+        compressImage(base, 300, 300).then(function(compressedBase){
+          products.forEach(function(p){
+            if(p.imageFile === fname){
+              p.imageData = compressedBase; // сюда записываем уже уменьшённое изображение
+            }
+          });
+
+          processed++;
+          if(processed===names.length){
+            saveProducts();
+            renderProducts();
+            alert('Картинки импортированы');
           }
         });
+      }).catch(function(err){
+        console.warn('zip entry err',err);
+        processed++;
+        if(processed===names.length){
+          saveProducts();
+          renderProducts();
+          alert('Картинки импортированы (с ошибками)');
+        }
+      });
+    });
+  }).catch(function(err){ 
+    console.error(err); 
+    alert('Ошибка чтения ZIP: '+err.message); 
+  });
+}
+
   
   
         saveProducts();
@@ -641,3 +661,4 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
