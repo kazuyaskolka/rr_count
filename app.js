@@ -647,8 +647,3 @@ function finalizeOrder(){
   
   
   }); // DOMContentLoaded end
-
-  
-
-
-
