@@ -158,7 +158,7 @@ function tryAddToCart(prodId, qty, payment, name, price){
     img.style.display = 'none';
   }
 
-  // мета-информация
+  // мета
   var meta = document.createElement('div');
   meta.className = 'meta';
 
@@ -174,18 +174,12 @@ function tryAddToCart(prodId, qty, payment, name, price){
   catEl.className = 'muted'; 
   catEl.textContent = 'Категория: ' + (p.categories || '—');
 
-  // остаток
   var avail = getAvailableStock(p.id);
   var stockEl = document.createElement('div'); 
   stockEl.className = 'muted'; 
   stockEl.textContent = 'Остаток: ' + avail + (typeof p.stock === 'number' ? (' (в базе: ' + p.stock + ')') : '');
 
-  meta.appendChild(nameEl);
-  meta.appendChild(priceEl);
-  meta.appendChild(catEl);
-  meta.appendChild(stockEl);
-
-  // controls: qty + payment + add to cart
+  // controls
   var controls = document.createElement('div'); 
   controls.style.marginTop = '8px';
 
@@ -210,14 +204,12 @@ function tryAddToCart(prodId, qty, payment, name, price){
     var qty = Number(quantities[p.id] || qtyInput.value || 1);
     var payment = payments[p.id] || paySelect.value || 'нал';
     var res = tryAddToCart(p.id, qty, payment, p.name, p.price);
-    if(!res.ok){
-      alert(res.message || 'Не удалось добавить');
-      return;
-    }
+    if(!res.ok){ alert(res.message || 'Не удалось добавить'); return; }
     renderCart();
-    renderProducts(); // обновим остатки
+    renderProducts();
   });
 
+  // добавляем контролы
   controls.appendChild(document.createTextNode('Кол-во: ')); 
   controls.appendChild(qtyInput);
   controls.appendChild(document.createTextNode(' Оплата: ')); 
@@ -225,21 +217,34 @@ function tryAddToCart(prodId, qty, payment, name, price){
   controls.appendChild(document.createElement('br'));
   controls.appendChild(addBtn);
 
+  // собираем meta
+  meta.appendChild(nameEl);
+  meta.appendChild(priceEl);
+  meta.appendChild(catEl);
+  meta.appendChild(stockEl);
   meta.appendChild(controls);
 
+  // режим отображения
+  if(viewMode === 'tiles'){
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'flex-start';
+    card.appendChild(img);
+    card.appendChild(meta);
+  } else {
+    card.style.display = 'flex';
+    card.style.flexDirection = 'row';
+    card.style.alignItems = 'center';
+    img.style.width = '100px';
+    img.style.height = '100px';
+    img.style.marginRight = '10px';
+    card.appendChild(img);
+    card.appendChild(meta);
+  }
 
+  productsDiv.appendChild(card);
+});
 
-
-    controls.appendChild(document.createTextNode('Кол-во: ')); controls.appendChild(qtyInput);
-    controls.appendChild(document.createTextNode(' Оплата: ')); controls.appendChild(paySelect);
-    controls.appendChild(document.createElement('br'));
-    controls.appendChild(addBtn);
-
-
-    meta.appendChild(name); meta.appendChild(price); meta.appendChild(cat); meta.appendChild(stockEl); meta.appendChild(controls);
-
-
-   
   
   
   // ===== render orders (safe) =====
@@ -647,3 +652,4 @@ function finalizeOrder(){
   
   
   }); // DOMContentLoaded end
+
