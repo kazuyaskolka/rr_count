@@ -366,4 +366,86 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('downloadOrdersBtn').addEventListener('click', downloadOrdersExcel);
 
 
-  document.getElementById('openProfileBtn').addEventListener('click
+  document.getElementById('openProfileBtn').addEventListener('click', function(){
+    document.getElementById('profileModal').style.display = 'block';
+});
+
+
+document.getElementById('closeProfileBtn').addEventListener('click', function(){
+    document.getElementById('profileModal').style.display = 'none';
+});
+
+
+// ===== finalize order button =====
+document.getElementById('finalizeOrderBtn').addEventListener('click', function(){
+    finalizeOrder();
+});
+
+
+// ===== chart rendering (simple placeholder) =====
+function renderStats(){
+    if(!chartSumEl || !chartCountEl) return;
+    var categorySums = {};
+    var categoryCounts = {};
+    orders.forEach(function(o){
+        (o.positions||[]).forEach(function(p){
+            var cat = (products.find(function(pr){ return pr.id === p.productId; }) || {}).categories || '—';
+            categorySums[cat] = (categorySums[cat] || 0) + (Number(p.price)||0)*(Number(p.qty)||0);
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + Number(p.qty||0);
+        });
+    });
+
+
+    chartSumEl.innerHTML = '';
+    for(var cat in categorySums){
+        var div = document.createElement('div');
+        div.textContent = cat + ': ' + categorySums[cat] + ' ₽';
+        chartSumEl.appendChild(div);
+    }
+
+
+    chartCountEl.innerHTML = '';
+    for(var cat in categoryCounts){
+        var div = document.createElement('div');
+        div.textContent = cat + ': ' + categoryCounts[cat] + ' шт.';
+        chartCountEl.appendChild(div);
+    }
+}
+
+
+// ===== initial render =====
+updateCategoryFilter();
+renderProducts();
+renderOrders();
+renderCart();
+renderStats();
+
+
+// ===== helper to normalize Drive URLs =====
+function normalizeDriveUrl(url){
+    if(!url) return '';
+    if(url.includes('drive.google.com')){
+        // support ?id=xxx and /d/xxx/
+        var match = url.match(/[-\w]{25,}/);
+        if(match) return 'https://drive.google.com/uc?export=view&id=' + match[0];
+    }
+    return url;
+}
+
+
+// ===== placeholder Excel/ZIP handlers =====
+function handleExcelFile(file){ 
+    if(!file) return;
+    alert('Обработка Excel файла: ' + file.name);
+}
+function handleZipFile(file){
+    if(!file) return;
+    alert('Обработка ZIP файла: ' + file.name);
+}
+function downloadProductsExcel(){ alert('Скачать товары'); }
+function downloadOrdersExcel(){ alert('Скачать заказы'); }
+
+
+}); // end DOMContentLoaded
+
+
