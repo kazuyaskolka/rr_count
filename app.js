@@ -261,21 +261,20 @@ filtered.sort(function(a, b){
       renderCart();
       renderProducts(); // обновим остатки на карточках
     });
+    var editBtn = document.createElement('button');
+    editBtn.textContent = '✏️ Редактировать';
+    editBtn.style.marginLeft = '8px';
+    editBtn.addEventListener('click', function(){
+      editProduct(p);
+    });
+    
 
 
     controls.appendChild(document.createTextNode('Кол-во: ')); controls.appendChild(qtyInput);
     controls.appendChild(document.createTextNode(' Оплата: ')); controls.appendChild(paySelect);
     controls.appendChild(document.createElement('br'));
     controls.appendChild(addBtn);
-
-    var editBtn = document.createElement('button');
-editBtn.textContent = '✏️ Редактировать';
-editBtn.style.marginLeft = '8px';
-editBtn.addEventListener('click', function(){
-  editProduct(p);
-});
-
-controls.appendChild(editBtn);
+    controls.appendChild(editBtn);
 
 
 
@@ -716,6 +715,7 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
 
 
 
