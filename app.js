@@ -129,11 +129,13 @@ function tryAddToCart(prodId, qty, payment, name, price){
     filterSelect.innerHTML = '<option value="">Все</option>';
     var cats = [];
     products.forEach(function(p){
-  if(!p) return;
+  if(!p || !p.categories) return;
+
   parseCategories(p.categories).forEach(function(cat){
     if(cats.indexOf(cat) === -1) cats.push(cat);
   });
 });
+
     cats.forEach(function(c){
       var opt = document.createElement('option'); opt.value = c; opt.textContent = c; filterSelect.appendChild(opt);
     });
@@ -152,9 +154,13 @@ function tryAddToCart(prodId, qty, payment, name, price){
 
   var filtered = products.filter(function(p){
   if(!p || p.active === false) return false;
+
   if(categoryFilter === '') return true;
-  return parseCategories(p.categories).includes(categoryFilter);
+
+  var cats = parseCategories(p.categories);
+  return cats.includes(categoryFilter);
 });
+
     // сортировка: сначала товары с остатком, потом с нулём
 filtered.sort(function(a, b){
   var aStock = getAvailableStock(a.id);
@@ -193,7 +199,18 @@ filtered.sort(function(a, b){
     var price = document.createElement('div'); price.className = 'price'; price.textContent = (p.price || 0) + ' ₽';
     var cat = document.createElement('div'); cat.className = 'muted'; cat.textContent = 'Категория: ' + (p.categories || '—');
 
+    function parseCategories(raw){
+  if(!raw) return [];
+  if(Array.isArray(raw)) return raw;
 
+  return String(raw)
+    .split(',')
+    .map(c => c.trim())
+    .filter(Boolean);
+}
+
+
+      
     // остаток (с учётом текущей корзины)
     var avail = getAvailableStock(p.id);
     var stockEl = document.createElement('div'); stockEl.className = 'muted'; stockEl.textContent = 'Остаток: ' + avail + (typeof p.stock === 'number' ? (' (в базе: ' + p.stock + ')') : '');
@@ -670,4 +687,5 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
 
