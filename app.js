@@ -141,7 +141,26 @@ function tryAddToCart(prodId, qty, payment, name, price){
     });
     filterSelect.value = current;
   }
-  
+
+
+  function editProduct(p){
+  var newPrice = prompt('Новая цена:', p.price);
+  if(newPrice === null) return;
+
+  var newStock = prompt('Новый остаток:', p.stock);
+  if(newStock === null) return;
+
+  var newCats = prompt('Категории (через запятую):', p.categories || '');
+
+  p.price = Number(newPrice) || 0;
+  p.stock = Number(newStock) || 0;
+  p.categories = newCats || '';
+
+  saveProducts();
+  updateCategoryFilter();
+  renderProducts();
+}
+
   
   // ===== render products =====
   function renderProducts(){
@@ -248,6 +267,16 @@ filtered.sort(function(a, b){
     controls.appendChild(document.createTextNode(' Оплата: ')); controls.appendChild(paySelect);
     controls.appendChild(document.createElement('br'));
     controls.appendChild(addBtn);
+
+    var editBtn = document.createElement('button');
+editBtn.textContent = '✏️ Редактировать';
+editBtn.style.marginLeft = '8px';
+editBtn.addEventListener('click', function(){
+  editProduct(p);
+});
+
+controls.appendChild(editBtn);
+
 
 
     meta.appendChild(name); meta.appendChild(price); meta.appendChild(cat); meta.appendChild(stockEl); meta.appendChild(controls);
@@ -687,5 +716,6 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
 
 
