@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', function(){
   var payments = {};   // temporary payment selection per product id
   var categoryFilter = '';
   var viewMode = 'list'; // 'list' or 'tiles'
+
+  // ===== categories helpers =====
+function parseCategories(cat){
+  if(!cat) return [];
+  if(Array.isArray(cat)) return cat;
+  return String(cat)
+    .split(',')
+    .map(c => c.trim())
+    .filter(Boolean);
+}
+
   
   
   // helper: generate order id
@@ -118,8 +129,11 @@ function tryAddToCart(prodId, qty, payment, name, price){
     filterSelect.innerHTML = '<option value="">Все</option>';
     var cats = [];
     products.forEach(function(p){
-      if(p && p.categories && cats.indexOf(p.categories) === -1) cats.push(p.categories);
-    });
+  if(!p) return;
+  parseCategories(p.categories).forEach(function(cat){
+    if(cats.indexOf(cat) === -1) cats.push(cat);
+  });
+});
     cats.forEach(function(c){
       var opt = document.createElement('option'); opt.value = c; opt.textContent = c; filterSelect.appendChild(opt);
     });
@@ -136,7 +150,22 @@ function tryAddToCart(prodId, qty, payment, name, price){
   if(viewMode === 'tiles') productsDiv.classList.add('tiles'); else productsDiv.classList.remove('tiles');
 
 
-  var filtered = products.filter(function(p){ return p && p.active !== false && (categoryFilter === '' || (p.categories || '') === categoryFilter); });
+  var filtered = products.filter(function(p){
+  if(!p || p.active === false) return false;
+  if(categoryFilter === '') return true;
+  return parseCategories(p.categories).includes(categoryFilter);
+});
+    // сортировка: сначала товары с остатком, потом с нулём
+filtered.sort(function(a, b){
+  var aStock = getAvailableStock(a.id);
+  var bStock = getAvailableStock(b.id);
+
+  if(aStock === 0 && bStock > 0) return 1;
+  if(aStock > 0 && bStock === 0) return -1;
+  return 0;
+});
+
+
 
 
   if(filtered.length === 0){
@@ -641,3 +670,4 @@ function finalizeOrder(){
   }); // DOMContentLoaded end
 
   
+
